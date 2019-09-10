@@ -13,6 +13,8 @@
  */
 package ch.qos.logback.more.appenders;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,6 +32,8 @@ abstract class FluentdAppenderBase<E> extends UnsynchronizedAppenderBase<E> {
     private static final String DATA_MSG = "msg";
     private static final String DATA_MESSAGE = "message";
     private static final String DATA_LOGGER = "logger";
+    private static final String DATA_LOGTIME = "logTime";
+//    private static final String DATA_TOKEN = "token";
     private static final String DATA_THREAD = "thread";
     private static final String DATA_LEVEL = "level";
     private static final String DATA_MARKER = "marker";
@@ -41,8 +45,10 @@ abstract class FluentdAppenderBase<E> extends UnsynchronizedAppenderBase<E> {
     protected boolean flattenMapMarker;
 
     protected Map<String, Object> createData(E event) {
-        Map<String, Object> data = new HashMap<String, Object>();
+        Map<String, Object> data = new HashMap<>();
         data.put(DATA_MSG, encoder.encode(event));
+        // 扩展时间戳记
+        data.put(DATA_LOGTIME, new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(new Date()));
 
         if (event instanceof ILoggingEvent) {
             ILoggingEvent loggingEvent = (ILoggingEvent) event;
@@ -50,7 +56,7 @@ abstract class FluentdAppenderBase<E> extends UnsynchronizedAppenderBase<E> {
             data.put(DATA_LOGGER, loggingEvent.getLoggerName());
             data.put(DATA_THREAD, loggingEvent.getThreadName());
             data.put(DATA_LEVEL, loggingEvent.getLevel().levelStr);
-
+            data.putAll(loggingEvent.getMDCPropertyMap());
             Marker marker = loggingEvent.getMarker();
             if (marker != null) {
                 if (marker instanceof MapMarker) {
